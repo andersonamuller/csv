@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="icon" type="image/x-icon" href="/themes/thephpleague/thephpleague.github.com/img/favicon.ico" />
+                <link rel="apple-touch-icon-precomposed" href="/themes/thephpleague/thephpleague.github.com/img/apple-touch-icon-precomposed.png">
+                <title>Reading &amp; Filtering - CSV</title>
+                <meta name="description" content="Working with CSV can often be much more difficult than you expect, with different types of delimiter and complicated structures. This makes it easy to read and write almost anything.">
+                <link rel="stylesheet" href="/themes/thephpleague/thephpleague.github.com/css/all.css">
+    </head>
+<body>
+
+<section class="all_packages">
+    <a href="http://thephpleague.com/">
+        <img src="/themes/thephpleague/thephpleague.github.com/img/loep_logo.png" width="195" height="200" alt="The League of Extraordinary Packages">
+    </a>
+    <h2>Our Packages:</h2>
+    <ul>
+    </ul>
+</section>
+
+<header>
+    <a class="logo" href="/">
+                <span class="name">CSV</span>
+        <span class="tagline">CSV data manipulation made easy in PHP.</span>
+    </a>
+    <a href="http://thephpleague.com/" class="league">
+        Presented by The League of Extraordinary Packages
+    </a>
+</header>
+
+<input type="checkbox" id="menu">
+<label for="menu" onclick>
+    <div class="closed">&#9776; Menu</div>
+    <div class="open">&#9776; Hide Menu</div>
+</label>
+
+<main>
+    <menu>
+                    <h2>Getting Started</h2>
+            <ul>
+                                    <li >
+                        <a href="/">Introduction</a>
+                    </li>
+                                    <li >
+                        <a href="/examples/">Examples</a>
+                    </li>
+                                    <li >
+                        <a href="/installation/">Installation</a>
+                    </li>
+                            </ul>
+                    <h2>The API</h2>
+            <ul>
+                                    <li >
+                        <a href="/overview/">Overview</a>
+                    </li>
+                                    <li >
+                        <a href="/outputting/">Outputting</a>
+                    </li>
+                                    <li class="selected">
+                        <a href="/reading/">Reading &amp; Filtering</a>
+                    </li>
+                                    <li >
+                        <a href="/inserting/">Inserting</a>
+                    </li>
+                            </ul>
+            </menu>
+    <article>
+        <h1>Reading &amp; Filtering</h1>
+
+<h2>Extracting data from the CSV</h2>
+
+<p>To extract data use <code>League\Csv\Reader</code> methods.</p>
+
+<h3>fetchAll($callable = null)</h3>
+
+<p><code>fetchAll</code> returns a sequential array of all rows.</p>
+
+<pre><code class="language-php">$data = $reader-&gt;fetchAll();
+// will return something like this :
+// 
+// [ 
+//   ['john', 'doe', 'john.doe@example.com'],
+//   ['jane', 'doe', 'jane.doe@example.com'],
+//   ...
+// ]
+//
+</code></pre>
+
+<h3>fetchAssoc([], $callable = null)</h3>
+
+<p><code>fetchAssoc</code> returns a sequential array of all rows. The rows themselves are associative arrays where the keys are given directly to the method using an one dimension array. This array should only contain unique <code>string</code> and/or <code>integer</code> values.</p>
+
+<pre><code class="language-php">$data = $reader-&gt;fetchAssoc(['firstname', 'lastname', 'email']);
+// will return something like this :
+// 
+// [ 
+//   ['firstname' =&gt; 'john', 'lastname' =&gt; 'doe', 'email' =&gt; 'john.doe@example.com'],
+//   ['firstname' =&gt; 'jane', 'lastname' =&gt; 'doe', 'email' =&gt; 'jane.doe@example.com'],
+//   ...
+// ]
+// 
+</code></pre>
+
+<p>If the number of values in a CSV row is lesser than the number of named keys, the method will add <code>null</code> values to compensate for the missing values.</p>
+
+<p>If the number of values in a CSV row is greater that the number of named keys the exceeding values will be drop from the result set.</p>
+
+<h3>fetchCol($columnIndex = 0, $callable = null)</h3>
+
+<p><code>fetchCol</code> returns a sequential array of all values in a given column from the CSV data.</p>
+
+<p>If no argument is given to the method it will return the first colum from the CSV data.
+If the column does not exists in the csv data the method will return an array full of <code>null</code> value.</p>
+
+<pre><code class="language-php">$data = $reader-&gt;fetchCol(2);
+// will return something like this :
+// 
+// ['john.doe@example.com', 'jane.doe@example.com', ...]
+// 
+</code></pre>
+
+<p>The methods listed above (<code>fetchAll</code>, <code>fetchAssoc</code>, <code>fetchCol</code>) can all take a optional <code>callable</code> argument to further manipulate each row before being returned. This callable function can take up to three parameters:</p>
+
+<ul>
+<li>the current csv row data</li>
+<li>the current csv key</li>
+<li>the current csv iterator object</li>
+</ul>
+
+<h3>fetchOne($offset = 0)</h3>
+
+<p><code>fetchOne</code> return one single row from the CSV data. The required argument $offset represent the row index starting at 0. If no argument is given to the method it will return the first row from the CSV data.</p>
+
+<pre><code class="language-php">$data = $reader-&gt;fetchOne(3); ///accessing the 4th row (indexing starts at 0)
+// will return something like this :
+// 
+//   ['john', 'doe', 'john.doe@example.com']
+//
+</code></pre>
+
+<h2>Filtering the data</h2>
+
+<p>You can further manipulate the CSV <code>fetch*</code> methods output by specifying filtering options using the following methods:</p>
+
+<h3>setFilter($callable = null)</h3>
+
+<p>setFilter method specifies an optional callable function to filter the CSV data. This function takes three parameters at most (see CallbackFilterIterator for more informations)</p>
+
+<h3>setSortBy($callable = null)</h3>
+
+<p>setSortBy method specifies an optional callable function to sort the CSV data. The function takes two parameters which will be filled by pairs of rows.</p>
+
+<p>Beware when using this filter that you will be using <code>iterator_to_array</code> which could lead to performance penalty if you have a heavy CSV file to sort</p>
+
+<h3>setOffset($offset) and setLimit($limit)</h3>
+
+<p>setOffset method specifies an optional offset for the return results.
+setLimit method specifies an optional maximum rows count for the return results.</p>
+
+<p>Both methods have no effect on the <code>fetchOne</code> method output</p>
+
+<p>Here's an example:</p>
+
+<pre><code class="language-php">function filterByEmail($row) 
+{
+    return filer_var($row[2], FILTER_VALIDATE_EMAIL);
+}
+
+function sortByLastName($rowA, $rowB)
+{
+    return strcmp($rowB[1], $rowA[1]);
+}
+
+$data = $reader
+    -&gt;setOffset(3)
+    -&gt;setLimit(2)
+    -&gt;setFilter('filterByEmail')
+    -&gt;setSortBy('sortByLastName')
+    -&gt;fetchAssoc(['firstname', 'lastname', 'email'], function ($value) {
+    return array_map('strtoupper', $value);
+});
+// data length will be equals or lesser that 2 starting from the row index 3.
+// will return something like this :
+// 
+// [ 
+//   ['firstname' =&gt; 'JANE', 'lastname' =&gt; 'RAMANOV', 'email' =&gt; 'JANE.RAMANOV@EXAMPLE.COM'],
+//   ['firstname' =&gt; 'JOHN', 'lastname' =&gt; 'DOE', 'email' =&gt; 'JOHN.DOE@EXAMPLE.COM'],
+// ]
+// 
+</code></pre>
+
+<p><strong>Of note:</strong></p>
+
+<p>The filtering methods are chainable;
+The methods can be call in any sort of order before any <code>fetch*</code> method call;
+After a <code>fetch*</code> method call, all filtering options are cleared;
+Only the last filtering settings are taken into account if the same method is called more than once;</p>
+
+<h3>Manual extracting and filtering</h3>
+
+<p>If you want to output differently you data you can use the <code>query</code> method. It works like the <code>fetchAll</code> method but returns an Iterator that you may manipulate as you wish.</p>
+
+<pre><code class="language-php">function filterByEmail($row) 
+{
+    return filer_var($row[2], FILTER_VALIDATE_EMAIL);
+}
+
+function sortByLastName($rowA, $rowB)
+{
+    return strcmp($rowB[1], $rowA[1]);
+}
+
+$iterator = $reader
+    -&gt;setFilter('filterByEmail')
+    -&gt;setSortBy('sortByLastName')
+    -&gt;setOffset(3)
+    -&gt;setLimit(2)
+    -&gt;query(function ($value) {
+        return array_map('strtoupper', $value);
+    });
+</code></pre>
+    </article>
+</main>
+
+<footer>
+    <span>&copy; Copyright The League of Extraordinary Packages.</span>
+    <span>Site design by <a href="http://reinink.ca">Jonathan Reinink</a>.</span>
+    <span>Powered by <a href="https://sculpin.io">Sculpin</a>.</span>
+</footer>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="/themes/thephpleague/thephpleague.github.com/js/scripts.js"></script>
+<script src="/themes/thephpleague/thephpleague.github.com/js/prism.js"></script>
+
+    <script>
+        (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+        function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+        e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+        e.src='//www.google-analytics.com/analytics.js';
+        r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+        ga('create','UA-46050814-6');ga('send','pageview');
+    </script>
+
+</body>
+</html>
