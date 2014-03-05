@@ -215,34 +215,43 @@ class AbstractCsv implements JsonSerializable, IteratorAggregate
      * Detect the CSV file delimiter
      *
      * @param integer $nbRows
-     * @param array   $additionals additional delimiters
+     * @param array   $delimiters additional delimiters
      *
      * @return string
+     *
+     * @throws \InvalidArgumentException If $nbRows value is invalid
+     * @throws \RuntimeException         If too many delimiters are found
      */
-    public function detectDelimiter($nbRows = 1, array $additionals = [])
+    public function detectDelimiter($nbRows = 1, array $delimiters = [])
     {
         $nbRows = filter_var($nbRows, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if (! $nbRows) {
             throw new InvalidArgumentException('`$nbRows` must be a valid positive integer');
         }
-        $additionals = array_filter($additionals, function ($str) {
+        $delimiters = array_filter($delimiters, function ($str) {
             return 1 == mb_strlen($str);
         });
-        $delimiters = [',', ';', "\t"];
-        $delim = array_unique(array_merge($delimiters, $additionals));
-        $iterator =  new CallbackFilterIterator(new LimitIterator($this->csv, 0, $nbRows), function ($row) {
-            return is_array($row) && count($row) > 1;
-        });
-        $origDelimiter = $this->getDelimiter();
-        $res = array_fill_keys($delimiters, null);
+        $delimiters = array_merge([',', ';', "\t"], $delimiters);
+        $delimiters = array_unique($delimiters);
+        $iterator = new CallbackFilterIterator(
+            new LimitIterator($this->csv, 0, $nbRows),
+            function ($row) {
+                return is_array($row) && count($row) > 1;
+            }
+        );
+        $res = [];
         foreach ($delimiters as $delim) {
-            $iterator->setCsvControl($delim);
+            $iterator->setCsvControl($delim, $this->enclosure, $this->escape);
             $res[$delim] = count(iterator_to_array($iterator, false));
         }
-        $this->setDelimiter($origDelimiter);
         arsort($res, SORT_NUMERIC);
-
-        return array_keys(array_filter($res));
+        $res = array_keys(array_filter($res));
+        if (! $res) {
+            return null;
+        } elseif (count($res) == 1) {
+            return $res[0];
+        }
+        throw new RuntimeException('too many delimiters were found: `'.implode('`,`', $res).'`');
     }
 
     /**
