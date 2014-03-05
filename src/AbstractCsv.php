@@ -39,6 +39,8 @@ use SplFileInfo;
 use SplFileObject;
 use SplTempFileObject;
 use InvalidArgumentException;
+use LimitIterator;
+use CallbackFilterIterator;
 
 /**
  *  A abstract class to enable basic CSV manipulation
@@ -207,6 +209,40 @@ class AbstractCsv implements JsonSerializable, IteratorAggregate
     public function getDelimiter()
     {
         return $this->delimiter;
+    }
+
+    /**
+     * Detect the CSV file delimiter
+     *
+     * @param integer $nbRows
+     * @param array   $additionals additional delimiters
+     *
+     * @return string
+     */
+    public function detectDelimiter($nbRows = 1, array $additionals = [])
+    {
+        $nbRows = filter_var($nbRows, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (! $nbRows) {
+            throw new InvalidArgumentException('`$nbRows` must be a valid positive integer');
+        }
+        $additionals = array_filter($additionals, function ($str) {
+            return 1 == mb_strlen($str);
+        });
+        $delimiters = [',', ';', "\t"];
+        $delim = array_unique(array_merge($delimiters, $additionals));
+        $iterator =  new CallbackFilterIterator(new LimitIterator($this->csv, 0, $nbRows), function ($row) {
+            return is_array($row) && count($row) > 1;
+        });
+        $origDelimiter = $this->getDelimiter();
+        $res = array_fill_keys($delimiters, null);
+        foreach ($delimiters as $delim) {
+            $iterator->setCsvControl($delim);
+            $res[$delim] = count(iterator_to_array($iterator, false));
+        }
+        $this->setDelimiter($origDelimiter);
+        arsort($res, SORT_NUMERIC);
+
+        return array_keys(array_filter($res));
     }
 
     /**
